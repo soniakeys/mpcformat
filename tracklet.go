@@ -86,7 +86,7 @@ func sendValid(
 	// observation times must increase after that
 	var t0 float64
 	for i := range obuf {
-		t := obuf[i].Meas().Mjd
+		t := obuf[i].Meas().MJD
 		if t <= t0 {
 			return
 		}
@@ -95,7 +95,7 @@ func sendValid(
 	// object must show motion over the tracklet
 	first := obuf[0].Meas()
 	last := obuf[len(obuf)-1].Meas()
-	if first.Ra == last.Ra && first.Dec == last.Dec {
+	if first.RA == last.RA && first.Dec == last.Dec {
 		return
 	}
 	tkCh <- &observation.Tracklet{

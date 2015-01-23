@@ -118,16 +118,16 @@ func testSiteObs(t *testing.T, m observation.ParallaxMap) {
 	}
 	want := observation.SiteObs{
 		VMeas: observation.VMeas{
-			Mjd:  56903.40285,
-			Sphr: coord.Sphr{Ra: 0.7549058069240641, Dec: 0.1857335756741066},
-			Vmag: 19.2,
+			MJD:  56903.40285,
+			Sphr: coord.Sphr{RA: 0.7549058069240641, Dec: 0.1857335756741066},
+			VMag: 19.2,
 			Qual: "703"},
 		Par: m["703"],
 	}
-	if math.Abs(so.VMeas.Mjd-want.VMeas.Mjd) > 1e-6 ||
-		math.Abs(so.VMeas.Sphr.Ra-want.VMeas.Sphr.Ra) > 1e-8 ||
+	if math.Abs(so.VMeas.MJD-want.VMeas.MJD) > 1e-6 ||
+		math.Abs(so.VMeas.Sphr.RA-want.VMeas.Sphr.RA) > 1e-8 ||
 		math.Abs(so.VMeas.Sphr.Dec-want.VMeas.Sphr.Dec) > 1e-8 ||
-		math.Abs(so.VMeas.Vmag-want.VMeas.Vmag) > 1e-2 ||
+		math.Abs(so.VMeas.VMag-want.VMeas.VMag) > 1e-2 ||
 		so.VMeas.Qual != want.VMeas.Qual ||
 		so.Par != want.Par {
 		t.Fatalf("ParseObs80 obs = %+v, want %+v", so, want)
@@ -157,8 +157,8 @@ func testSatObs(t *testing.T, m observation.ParallaxMap) {
 	want := &observation.SatObs{
 		Sat: "250",
 		VMeas: observation.VMeas{
-			Mjd:  50325.51477,
-			Sphr: coord.Sphr{Ra: 5.530651548153087, Dec: -0.09366997866254745},
+			MJD:  50325.51477,
+			Sphr: coord.Sphr{RA: 5.530651548153087, Dec: -0.09366997866254745},
 			Qual: "250",
 		},
 		Offset: coord.Cart{
@@ -167,11 +167,11 @@ func testSatObs(t *testing.T, m observation.ParallaxMap) {
 			Z: 5.830930614185884e-06,
 		},
 	}
-	if math.Abs(so.VMeas.Mjd-want.VMeas.Mjd) > 1e-6 ||
+	if math.Abs(so.VMeas.MJD-want.VMeas.MJD) > 1e-6 ||
 		so.Sat != want.Sat ||
-		math.Abs(so.VMeas.Sphr.Ra-want.VMeas.Sphr.Ra) > 1e-8 ||
+		math.Abs(so.VMeas.Sphr.RA-want.VMeas.Sphr.RA) > 1e-8 ||
 		math.Abs(so.VMeas.Sphr.Dec-want.VMeas.Sphr.Dec) > 1e-8 ||
-		math.Abs(so.VMeas.Vmag-want.VMeas.Vmag) > 1e-2 ||
+		math.Abs(so.VMeas.VMag-want.VMeas.VMag) > 1e-2 ||
 		so.VMeas.Qual != want.VMeas.Qual ||
 		math.Abs(so.Offset.X-want.Offset.X) > 1e-8 ||
 		math.Abs(so.Offset.Y-want.Offset.Y) > 1e-8 ||

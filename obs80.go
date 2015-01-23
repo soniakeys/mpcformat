@@ -99,13 +99,13 @@ func ParseObs80(line80 string, ocm observation.ParallaxMap) (desig string,
 		o = &observation.SiteObs{Par: par}
 	}
 	m := o.Meas()
-	m.Mjd = mjd
-	m.Ra = (float64(rah*60+ram)*60 + ras) * math.Pi / (12 * 3600)
+	m.MJD = mjd
+	m.RA = (float64(rah*60+ram)*60 + ras) * math.Pi / (12 * 3600)
 	m.Dec = (float64(decd*60+decm)*60 + decs) * math.Pi / (180 * 3600)
 	if decg == '-' {
 		m.Dec = -m.Dec
 	}
-	m.Vmag = mag
+	m.VMag = mag
 	// could be enhanced to store program code, eg.  if so, see obsErr
 	// code in digest2.readConfig and make appropriate changes.
 	m.Qual = obscode
@@ -163,7 +163,7 @@ func ParseSat2(line80, desig string, s1 *observation.SatObs) error {
 	switch date2, ok := ParseObs80Date(d); {
 	case !ok:
 		return fmt.Errorf("sat obs line 2 invalid date (%s)", d)
-	case date2 != s1.Mjd:
+	case date2 != s1.MJD:
 		return fmt.Errorf("sat obs line 2 date %s different from line 1", d)
 	}
 	if line80[77:80] != s1.Sat {
