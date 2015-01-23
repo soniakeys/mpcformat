@@ -10,20 +10,20 @@ import (
 	"github.com/soniakeys/observation"
 )
 
-// SplitTracklets splits an observation stream up into tracklets.
+// Split splits an observation stream by designation, yielding observation arcs.
 //
 // The stream iObs is a stream of observations in the MPC 80 column format.
 // The stream must have observations already grouped by designation and sorted
 // chronologically within each object.  That is, this function does not sort
 // them, but logic within the function relies on them being already sorted.
 //
-// Valid tracklets are parsed against ocdMap and retuned on channel tkCh.
+// Valid arcs are parsed against ocdMap and retuned on channel arcCh.
 // Read errors are relayed on errCh should be considered fatal.
 // Parse errors are not fatal.  They are quietly ignored and not relayed
-// on errCh.  Lines causing parse errors and lines not forming valid tracklets
+// on errCh.  Lines causing parse errors and lines not forming valid arcs
 // are dropped without notification.
-func SplitTracklets(iObs io.Reader, ocdMap observation.ParallaxMap,
-	tkCh chan *observation.Tracklet, errCh chan error) {
+func Split(iObs io.Reader, ocdMap observation.ParallaxMap,
+	arcCh chan *observation.Arc, errCh chan error) {
 	bf := bufio.NewReader(iObs)
 	var des0 string
 	var o observation.VObs
@@ -39,7 +39,7 @@ func SplitTracklets(iObs io.Reader, ocdMap observation.ParallaxMap,
 			break
 		}
 		if pre {
-			errCh <- errors.New("splitTracklets: unexpected long line")
+			errCh <- errors.New("Split: unexpected long line")
 			break
 		}
 		if len(bLine) != 80 {
@@ -55,10 +55,10 @@ func SplitTracklets(iObs io.Reader, ocdMap observation.ParallaxMap,
 		desig, o, err = ParseObs80(line, ocdMap)
 		switch {
 		case err != nil:
-			sendValid(des0, obuf, tkCh)
+			sendValid(des0, obuf, arcCh)
 			obuf = obuf[:0]
 		default:
-			sendValid(des0, obuf, tkCh)
+			sendValid(des0, obuf, arcCh)
 			fallthrough
 		case len(obuf) == 0:
 			des0 = desig
@@ -68,16 +68,15 @@ func SplitTracklets(iObs io.Reader, ocdMap observation.ParallaxMap,
 			obuf = append(obuf, o)
 		}
 	}
-	sendValid(des0, obuf, tkCh)
-	close(tkCh)
+	sendValid(des0, obuf, arcCh)
+	close(arcCh)
 }
 
-// checks that observations make a valid tracklet,
-// allocates and sends the tracklet.
+// checks that observations make a valid arc, allocates and sends.
 func sendValid(
 	desig string,
 	obuf []observation.VObs,
-	tkCh chan *observation.Tracklet,
+	arcCh chan *observation.Arc,
 ) {
 	if len(obuf) < 2 {
 		return
@@ -92,13 +91,13 @@ func sendValid(
 		}
 		t0 = t
 	}
-	// object must show motion over the tracklet
+	// object must show motion over the arc
 	first := obuf[0].Meas()
 	last := obuf[len(obuf)-1].Meas()
 	if first.RA == last.RA && first.Dec == last.Dec {
 		return
 	}
-	tkCh <- &observation.Tracklet{
+	arcCh <- &observation.Arc{
 		Desig: desig,
 		Obs:   append([]observation.VObs{}, obuf...),
 	}
