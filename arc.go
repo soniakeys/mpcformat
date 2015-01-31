@@ -11,6 +11,8 @@ import (
 	"github.com/soniakeys/observation"
 )
 
+type ArcError struct{ error }
+
 // ArcSplitter returns a function that splits an observation stream by
 // designation, yielding parsed observation arcs.
 //
@@ -22,60 +24,76 @@ import (
 // Observations are parsed against pMap.
 // Read errors should be considered fatal.
 // Parse errors are not fatal but do terminate arcs.
-func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observation.Arc, error, error) {
+func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observation.Arc, error) {
 	s := bufio.NewScanner(rObs)
-	var desig string       // designation last read
-	var o observation.VObs // observation last read
-	var a observation.Arc  // arc under construction
-	return func() (arc *observation.Arc, readErr, parseErr error) {
-		a.Obs = a.Obs[:0]
-		arc = &a
-		// o != nil means a valid observation was scanned on the previous call.
-		if o != nil {
-			a.Obs = append(a.Obs, o)
-			a.Desig = desig
-			o = nil
+	var a observation.Arc // arc under construction
+	var (                 // values that may be carried from last call
+		desig string
+		o     observation.VObs
+		err   error
+	)
+	return func() (*observation.Arc, error) {
+		if err != nil { // error from last call
+			e := err
+			err = nil
+			return nil, ArcError{e}
 		}
+		a.Obs = a.Obs[:0]
+		if o != nil { // observation from last call
+			a.Desig = desig
+			a.Obs = append(a.Obs, o)
+		}
+	arc:
 		for {
-			if !s.Scan() {
-				if readErr = s.Err(); readErr != nil {
-					return
+			scanEOF := !s.Scan()
+			if scanEOF {
+				if err = s.Err(); err != nil {
+					return nil, err
 				}
-				readErr = io.EOF
 			}
 			line := s.Text()
 			switch {
 			case len(line) == 80:
-			case len(line) == 0 && readErr == io.EOF:
+			case len(line) == 0 && scanEOF:
 				o = nil
-				return
+				return &a, io.EOF
 			default:
-				parseErr = fmt.Errorf(
-					"observation line length = %d, want 80", len(line))
-				return
+				err = fmt.Errorf("observation line length = %d, want 80",
+					len(line))
+				break arc
 			}
 			if line[14] == 's' {
 				s, ok := o.(*observation.SatObs)
 				if !ok {
-					parseErr = errors.New(
-						"space-based observation line 2 without line 1")
-					return
+					err = ArcError{errors.New(
+						"space-based observation line 2 without line 1")}
+					break arc
 				}
-				if parseErr = ParseSat2(line, desig, s); parseErr != nil {
-					return
+				if err = ParseSat2(line, desig, s); err != nil {
+					// TODO maybe back off that last S obs too?
+					break arc
 				}
+				continue // (it's already in the list)
 			}
-			switch desig, o, parseErr = ParseObs80(line, pMap); {
-			case parseErr != nil:
-				return
+			switch desig, o, err = ParseObs80(line, pMap); {
+			case err != nil:
+				break arc
 			case len(a.Obs) == 0:
 				a.Desig = desig // begin new arc
 				fallthrough
 			case desig == a.Desig:
 				a.Obs = append(a.Obs, o) // add observation to arc
 			default:
-				return // normal return
+				return &a, nil // carry desig, o to next call
 			}
 		}
+		// there was a parse error
+		o = nil // (anything there is no good)
+		if len(a.Obs) > 0 {
+			return &a, nil // return good obs, carry err to next call
+		}
+		e := err // return err now
+		err = nil
+		return &a, ArcError{e}
 	}
 }

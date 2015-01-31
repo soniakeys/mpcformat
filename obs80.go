@@ -151,11 +151,11 @@ func ParseObs80Date(d string) (mjd float64, ok bool) {
 
 // ParseSat2 parses the second line of a space-based observation.
 //
-// Arguments desig and s1 must be results of parsing the first line.
+// Arguments des1 and s1 must be results of parsing the first line.
 // ParseSat2 validates that identifying data matches line 1 and then
 // updates s1 with line 2 information.
-func ParseSat2(line80, desig string, s1 *observation.SatObs) error {
-	if des1 := strings.TrimSpace(line80[:12]); desig != des1 {
+func ParseSat2(line80, des1 string, s1 *observation.SatObs) error {
+	if desig := strings.TrimSpace(line80[:12]); desig != des1 {
 		return fmt.Errorf("sat obs line 2 designation = %s, line 1 was %s",
 			desig, des1)
 	}

@@ -18,16 +18,10 @@ func ExampleParseObs80Date() {
 	// 56904.8 true
 }
 
-func TestParseObs80(t *testing.T) {
+func TestSiteObs(t *testing.T) {
 	if pMapErr != nil {
-		t.Fatal(pMapErr)
+		t.Skip(pMapErr)
 	}
-	testSiteObs(t)
-	testSatObs(t)
-}
-
-func testSiteObs(t *testing.T) {
-	t.Log("testSiteObs")
 	const obs = "     K11Q14F  C2014 09 03.40285 02 53 00.70 +10 38 30.3          19.2 VqER031703"
 	desig, o, err := mpcformat.ParseObs80(obs, pMap)
 	if err != nil {
@@ -58,13 +52,16 @@ func testSiteObs(t *testing.T) {
 	}
 }
 
-func testSatObs(t *testing.T) {
-	t.Log("testSatObs")
-	const (
-		line1 = "03620         S1996 08 30.51477 21 07 31.918-05 22 00.82                27764250"
-		line2 = "03620         s1996 08 30.51477 1 -  344.3553 - 6919.1239 +  872.2948   27764250"
-	)
-	desig, o, err := mpcformat.ParseObs80(line1, pMap)
+const (
+	tcSatLine1 = "03620         S1996 08 30.51477 21 07 31.918-05 22 00.82                27764250"
+	tcSatLine2 = "03620         s1996 08 30.51477 1 -  344.3553 - 6919.1239 +  872.2948   27764250"
+)
+
+func TestSatObs(t *testing.T) {
+	if pMapErr != nil {
+		t.Skip(pMapErr)
+	}
+	desig, o, err := mpcformat.ParseObs80(tcSatLine1, pMap)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +72,7 @@ func testSatObs(t *testing.T) {
 	if !ok {
 		t.Fatalf("Want *observation.SatObs from ParseObs80, got %T", o)
 	}
-	if err = mpcformat.ParseSat2(line2, desig, so); err != nil {
+	if err = mpcformat.ParseSat2(tcSatLine2, desig, so); err != nil {
 		t.Fatal(err)
 	}
 	want := &observation.SatObs{
