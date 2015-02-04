@@ -38,8 +38,7 @@ const (
 type arcRes struct {
 	desig string
 	nObs  int
-	ok    bool // error == nil
-	eof   bool // the only special value expected from readErr
+	ok    bool // false means parse error
 }
 
 var arcTests = []struct {
@@ -49,36 +48,43 @@ var arcTests = []struct {
 }{
 	{"no data", "", nil},
 	{"single obs", o1, []arcRes{
-		{o1Desig, 1, true, true},
+		{o1Desig, 1, true},
 	}},
 	{"two obs", o2, []arcRes{
-		{o2Desig, 2, true, true},
+		{o2Desig, 2, true},
 	}},
 	{"two arcs", o1 + o2, []arcRes{
-		{o1Desig, 1, true, false},
-		{o2Desig, 2, true, true},
+		{o1Desig, 1, true},
+		{o2Desig, 2, true},
 	}},
 	{"satellite", sat, []arcRes{
-		{satDesig, 1, true, true},
+		{satDesig, 1, true},
 	}},
 	{"mix", o3 + sat + sat + o1, []arcRes{
-		{o3Desig, 3, true, false},
-		{satDesig, 2, true, false},
-		{o1Desig, 1, true, true},
+		{o3Desig, 3, true},
+		{satDesig, 2, true},
+		{o1Desig, 1, true},
 	}},
 	{"bad", bad, []arcRes{
-		{"", 0, false, true},
+		{"", 0, false},
 	}},
 	{"short", short, []arcRes{
-		{"", 0, false, true},
+		{"", 0, false},
 	}},
 	{"bad mix", o1 + short + sat + bad + bad + o3, []arcRes{
-		{o1Desig, 1, true, false},
-		{"", 0, false, false},
-		{satDesig, 1, true, false},
-		{"", 0, false, false},
-		{"", 0, false, false},
-		{o3Desig, 3, true, true},
+		{o1Desig, 1, true},
+		{"", 0, false},
+		{satDesig, 1, true},
+		{"", 0, false},
+		{"", 0, false},
+		{o3Desig, 3, true},
+	}},
+	{"no final lf", o3[:len(o3)-1], []arcRes{
+		{o3Desig, 3, true},
+	}},
+	{"single obs missing final lf", o3 + o1[:len(o1)-1], []arcRes{
+		{o3Desig, 3, true},
+		{o1Desig, 1, true},
 	}},
 }
 
@@ -88,10 +94,6 @@ func TestArcSplitter(t *testing.T) {
 		for _, want := range tc.want {
 			got, gotErr := f()
 			switch {
-			case gotErr == io.EOF:
-				if !want.eof {
-					t.Fatalf("%s: EOF", tc.desc)
-				}
 			case gotErr != nil:
 				if want.ok {
 					t.Fatalf("%s err: %s", tc.desc, gotErr)
@@ -101,12 +103,10 @@ func TestArcSplitter(t *testing.T) {
 						tc.desc, gotErr, gotErr)
 				}
 				continue
-			case want.eof:
-				t.Fatalf("%s want EOF", tc.desc)
 			case !want.ok:
 				t.Fatalf("%s want parse error", tc.desc)
 			}
-			// eof was as expected, otherwise all okay, check result
+			// check result
 			if got.Desig != want.desig {
 				t.Fatalf("%s .Desig = %s, want %s",
 					tc.desc, got.Desig, want.desig)
@@ -116,14 +116,11 @@ func TestArcSplitter(t *testing.T) {
 					tc.desc, len(got.Obs), want.nObs)
 			}
 		}
-		// additional read should return EOF with no observations
-		got, gotErr := f()
+		// additional read should return EOF
+		_, gotErr := f()
 		if gotErr != io.EOF {
-			t.Fatalf("%s read past end should return io.EOF", tc.desc)
-		}
-		if len(got.Obs) != 0 {
-			t.Fatalf("%s read past end returned %d observations.  want 0.",
-				tc.desc, len(got.Obs))
+			t.Fatalf("%s read past end got err = %v, want io.EOF",
+				tc.desc, gotErr)
 		}
 	}
 }

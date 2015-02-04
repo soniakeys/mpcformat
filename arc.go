@@ -22,8 +22,16 @@ type ArcError struct{ error }
 // breaks the input stream at designation changes.
 //
 // Observations are parsed against pMap.
-// Read errors should be considered fatal.
-// Parse errors are not fatal but do terminate arcs.
+//
+// - If a valid arc is returned, err will be nil.
+//
+// - After all arcs are returned, err will be io.EOF.
+//
+// - An err that can be type asserted to type ArcError represents a parse error
+// but is not fatal.  The split function can be called again.
+//
+// - Other errors should be considered fatal and the split function should not
+// be called again.
 func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observation.Arc, error) {
 	s := bufio.NewScanner(rObs)
 	var a observation.Arc // arc under construction
@@ -36,7 +44,7 @@ func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observat
 		if err != nil { // error from last call
 			e := err
 			err = nil
-			return nil, ArcError{e}
+			return nil, e
 		}
 		a.Obs = a.Obs[:0]
 		if o != nil { // observation from last call
@@ -45,21 +53,28 @@ func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observat
 		}
 	arc:
 		for {
-			scanEOF := !s.Scan()
-			if scanEOF {
+			scanOk := s.Scan()
+			if !scanOk {
 				if err = s.Err(); err != nil {
 					return nil, err
 				}
 			}
 			line := s.Text()
-			switch {
-			case len(line) == 80:
-			case len(line) == 0 && scanEOF:
-				o = nil
-				return &a, io.EOF
+			switch len(line) {
+			case 80:
+			case 0:
+				if !scanOk {
+					if len(a.Obs) == 0 {
+						return nil, io.EOF
+					}
+					err = io.EOF
+					o = nil
+					return &a, nil
+				}
+				fallthrough
 			default:
-				err = fmt.Errorf("observation line length = %d, want 80",
-					len(line))
+				err = ArcError{fmt.Errorf("observation line length = %d, want 80",
+					len(line))}
 				break arc
 			}
 			if line[14] == 's' {
@@ -77,6 +92,7 @@ func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observat
 			}
 			switch desig, o, err = ParseObs80(line, pMap); {
 			case err != nil:
+				err = ArcError{err}
 				break arc
 			case len(a.Obs) == 0:
 				a.Desig = desig // begin new arc
@@ -94,6 +110,6 @@ func ArcSplitter(rObs io.Reader, pMap observation.ParallaxMap) func() (*observat
 		}
 		e := err // return err now
 		err = nil
-		return &a, ArcError{e}
+		return &a, e
 	}
 }
