@@ -432,39 +432,37 @@ func boolFunc(fv reflect.Value, dd decodeData, tfName string) fieldFunc {
 	panic("boolFunc missing case")
 }
 
-/*
-func parseEpoch(s string) uint64, error {
+func UnpackEpoch(s string) (y, m int, d float64, err error) {
+	var c1, m1, d1 byte
+	var yy int
 	if len(s) < 5 {
 		goto fail
 	}
-	c := s[0]-'A'
-	if c > 25 {
+	c1 = s[0] - 'A'
+	if c1 > 25 {
 		goto fail
 	}
-	yy, err := strconv.ParseUInt(s[1:2], 10, 64)
+	yy, err = strconv.Atoi(s[1:3])
 	if err != nil {
 		goto fail
 	}
-	var m, d uint8
 	switch {
 	case s[3] >= '1' && s[3] <= '9':
-		m = s[3]-'1'
+		m1 = s[3] - '0'
 	case s[3] >= 'A' && s[3] <= 'C':
-		m = s[3]-'A'
+		m1 = s[3] - 'A' + 10
 	default:
 		goto fail
 	}
 	switch {
 	case s[4] >= '1' && s[4] <= '9':
-		d = s[4]-'1'
+		d1 = s[4] - '0'
 	case s[4] >= 'A' && s[4] <= 'V':
-		d = s[3]-'A'
+		d1 = s[4] - 'A' + 10
 	default:
 		goto fail
 	}
-	return (c+1)
-	}
+	return (10+int(c1))*100 + yy, int(m1), float64(d1), nil
 fail:
-	return 0, errors.New("
+	return 0, 0, 0, fmt.Errorf("Can't parse epoch %s", s)
 }
-*/
