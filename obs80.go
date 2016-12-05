@@ -5,12 +5,12 @@ package mpcformat
 import (
 	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
 	"github.com/soniakeys/coord"
 	"github.com/soniakeys/observation"
+	"github.com/soniakeys/unit"
 )
 
 // ParseObs80 parses a single line observation in the MPC 80 column format.
@@ -100,11 +100,8 @@ func ParseObs80(line80 string, ocm observation.ParallaxMap) (desig string,
 	}
 	m := o.Meas()
 	m.MJD = mjd
-	m.RA = (float64(rah*60+ram)*60 + ras) * math.Pi / (12 * 3600)
-	m.Dec = (float64(decd*60+decm)*60 + decs) * math.Pi / (180 * 3600)
-	if decg == '-' {
-		m.Dec = -m.Dec
-	}
+	m.RA = unit.NewRA(rah, ram, ras)
+	m.Dec = unit.NewAngle(decg, decd, decm, decs)
 	m.VMag = mag
 	// could be enhanced to store program code, eg.  if so, see obsErr
 	// code in digest2.readConfig and make appropriate changes.

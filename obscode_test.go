@@ -63,7 +63,7 @@ func testParallaxMap(m observation.ParallaxMap, t *testing.T) {
 			}
 		case c.cos == 0 && c.sin == 0:
 			t.Fatal("expected nil for code", c.code)
-		case math.Abs(s.Longitude*360-c.lon) > 1e-10:
+		case math.Abs(s.Longitude.Deg()-c.lon) > 1e-10:
 			t.Fatal("bad longitude, code", c.code)
 		case math.Abs(s.RhoCosPhi*149.59787e9/6.37814e6-c.cos) > 1e-10:
 			t.Fatal("bad rho cos, code", c.code)

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/soniakeys/observation"
+	"github.com/soniakeys/unit"
 )
 
 // ObscodeDatURL links to the present location of the file known as obscode.dat,
@@ -94,7 +95,6 @@ func ReadObscodeDat(r io.Reader) (observation.ParallaxMap, error) {
 				// such as column heading line.
 				continue
 			}
-			longitude /= 360
 		}
 
 		if ts := strings.TrimSpace(line[13:21]); len(ts) == 0 {
@@ -122,7 +122,7 @@ func ReadObscodeDat(r io.Reader) (observation.ParallaxMap, error) {
 		} else {
 			ocdMap[line[0:3]] =
 				&observation.ParallaxConst{
-					Longitude: longitude,
+					Longitude: unit.AngleFromDeg(longitude),
 					RhoCosPhi: rhoCosPhi,
 					RhoSinPhi: rhoSinPhi,
 				}

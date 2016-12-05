@@ -36,15 +36,17 @@ func TestSiteObs(t *testing.T) {
 	}
 	want := observation.SiteObs{
 		VMeas: observation.VMeas{
-			MJD:  56903.40285,
-			Sphr: coord.Sphr{RA: 0.7549058069240641, Dec: 0.1857335756741066},
+			MJD: 56903.40285,
+			Equa: coord.Equa{
+				RA:  0.7549058069240641,
+				Dec: 0.1857335756741066},
 			VMag: 19.2,
 			Qual: "703"},
 		Par: pMap["703"],
 	}
 	if math.Abs(so.VMeas.MJD-want.VMeas.MJD) > 1e-6 ||
-		math.Abs(so.VMeas.Sphr.RA-want.VMeas.Sphr.RA) > 1e-8 ||
-		math.Abs(so.VMeas.Sphr.Dec-want.VMeas.Sphr.Dec) > 1e-8 ||
+		math.Abs((so.VMeas.Equa.RA-want.VMeas.Equa.RA).Rad()) > 1e-8 ||
+		math.Abs((so.VMeas.Equa.Dec-want.VMeas.Equa.Dec).Rad()) > 1e-8 ||
 		math.Abs(so.VMeas.VMag-want.VMeas.VMag) > 1e-2 ||
 		so.VMeas.Qual != want.VMeas.Qual ||
 		so.Par != want.Par {
@@ -79,7 +81,7 @@ func TestSatObs(t *testing.T) {
 		Sat: "250",
 		VMeas: observation.VMeas{
 			MJD:  50325.51477,
-			Sphr: coord.Sphr{RA: 5.530651548153087, Dec: -0.09366997866254745},
+			Equa: coord.Equa{RA: 5.530651548153087, Dec: -0.09366997866254745},
 			Qual: "250",
 		},
 		Offset: coord.Cart{
@@ -90,8 +92,8 @@ func TestSatObs(t *testing.T) {
 	}
 	if math.Abs(so.VMeas.MJD-want.VMeas.MJD) > 1e-6 ||
 		so.Sat != want.Sat ||
-		math.Abs(so.VMeas.Sphr.RA-want.VMeas.Sphr.RA) > 1e-8 ||
-		math.Abs(so.VMeas.Sphr.Dec-want.VMeas.Sphr.Dec) > 1e-8 ||
+		math.Abs((so.VMeas.Equa.RA-want.VMeas.Equa.RA).Rad()) > 1e-8 ||
+		math.Abs((so.VMeas.Equa.Dec-want.VMeas.Equa.Dec).Rad()) > 1e-8 ||
 		math.Abs(so.VMeas.VMag-want.VMeas.VMag) > 1e-2 ||
 		so.VMeas.Qual != want.VMeas.Qual ||
 		math.Abs(so.Offset.X-want.Offset.X) > 1e-8 ||
