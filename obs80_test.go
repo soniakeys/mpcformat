@@ -28,7 +28,7 @@ func TestSiteObs(t *testing.T) {
 		t.Fatal(err)
 	}
 	if desig != "K11Q14F" {
-		t.Fatalf(`ParseObs80 desig = %q, want "K11Q14F"`)
+		t.Fatalf(`ParseObs80 desig = %q, want "K11Q14F"`, desig)
 	}
 	so, ok := o.(*observation.SiteObs)
 	if !ok {
@@ -68,7 +68,7 @@ func TestSatObs(t *testing.T) {
 		t.Fatal(err)
 	}
 	if desig != "03620" {
-		t.Fatalf(`Line 1 desig = %q, want "03620"`)
+		t.Fatalf(`Line 1 desig = %q, want "03620"`, desig)
 	}
 	so, ok := o.(*observation.SatObs)
 	if !ok {

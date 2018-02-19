@@ -1,3 +1,5 @@
+// Public domain.
+
 package mpcformat_test
 
 import (
